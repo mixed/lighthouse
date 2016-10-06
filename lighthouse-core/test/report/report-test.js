@@ -40,4 +40,11 @@ describe('Report', () => {
 
     return assert.ok(/<script src/gim.test(html));
   });
+
+  it('generates CLI JSON', () => {
+    const reportGenerator = new ReportGenerator();
+    const json = reportGenerator.generateJSON(sampleResults);
+
+    return assert.ok(/generatedTime/gim.test(json));
+  });
 });
