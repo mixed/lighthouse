@@ -172,11 +172,6 @@ class ReportGenerator {
     return items;
   }
 
-  generateJSON(results) {
-    results.generatedTime = this._generatedTime();
-    return JSON.stringify(results, null, 2);
-  }
-
   generateHTML(results, options) {
     const inline = (options && options.inline) || false;
 
