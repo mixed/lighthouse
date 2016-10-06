@@ -107,7 +107,7 @@ function createOutput(results, outputMode) {
 
   // JSON report.
   if (outputMode === 'json') {
-    return reportGenerator.generateJSON(results);
+    return JSON.stringify(results, null, 2);
   }
 
   // Pretty printed.
