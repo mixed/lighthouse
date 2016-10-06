@@ -37,7 +37,7 @@ describe('Report', () => {
   it('should format generated Time', () => {
     const reportGenerator = new ReportGenerator();
     const html = reportGenerator.generateHTML(sampleResults, {inline: true});
-    return assert.ok(/10\/7\/2016/gim.test(html));
+    return assert.ok(/on 10\/\d\/2016\, /gim.test(html));
   });
 
   it('generates extension HTML', () => {
