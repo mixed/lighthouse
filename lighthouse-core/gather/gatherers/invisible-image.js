@@ -34,66 +34,72 @@ function getInVisibleImages() {
       info.left < 0 ||
       document.documentElement.clientWidth  < info.left)
     ){
-      info.src = img.src;
-      prev.push(info);
+      prev[img.src] = {
+        "url" : img.src,
+        "box" : {
+          top : info.top,
+          bottom : info.bottom,
+          left : info.left,
+          right : info.right,
+          width : info.width,
+          height : info.height
+        }
+      };
     }
     return prev;
-  },[]);
+  },{});
   // __returnResults is magically inserted by driver.evaluateAsync
   __returnResults(invisibleImages);
 }
 
-class InvisibleImage extends Gatherer {
-
-  afterPass(options) {
-    const driver = options.driver;
-
-    return driver.sendCommand('Network.enable')
-      .then(_ => {
-        return new Promise((resolve, error) => {
-          let imageDataList = [];
-          const listener = (data) => {
-            if(data.type === "Image"){
-              imageDataList.push(data);
-            }
-          };
-
-          driver.on('Network.responseReceived', listener);
-          driver.once('Page.loadEventFired', _ => {
-            driver.evaluateAsync(`${getInVisibleImages.toString()}()`).then(invisibleImages => {
-              resolve(invisibleImages,imageDataList);
-            });
-            driver.off('Network.responseReceived', listener);
-          });
-
-        });
-      })
-      .then(data => {
-
-      })
+function getFileName(filename, url){
+  if(filename === ""){
+    const extractFileName = url.match(/\/([^/]*?)\.[\S]{3}$/);
+    return extractFileName?extractFileName[0]:"none";
   }
+  return filename;
+
 }
 
 
+class InvisibleImage extends Gatherer {
 
+  afterPass(options,tracingData) {
+    const driver = options.driver;
+    const navigationRecord = tracingData.networkRecords.reduce( (prev, record) => {
+      if(/image/.test(record._mimeType)){
+        prev[record._url] = {
+          transferSize: record._transferSize,
+          filename: record._parsedURL.lastPathComponent,
+          startTime: record._startTime,
+          endTime: record._endTime,
+          timing: record._timing
+        };
+      }
+      return prev;
+    },{});
 
+    return driver.evaluateAsync(`(${getInVisibleImages.toString()}())`)
+      .then( data => {
+        const filteredData = Object.keys(data).reduce((prev, url) => {
+          if(navigationRecord[url]){
+            data[url].filename = getFileName(navigationRecord[url].filename,url);
+            // delete navigationRecord[url].url;
+            data[url].perf = navigationRecord[url];
+            data[url].perf.spendTime = data[url].perf.endTime - data[url].perf.startTime;
+            prev.push(data[url]);
+          }
+          return prev;
+        },[]);
 
+        this.artifact = filteredData;
+        return;
+      },_ => {
+        this.artifact = [];
+        return;
+      });
+  }
+}
 
-
-        //   driver.once('LayerTree.layerTreeDidChange', data => {
-        //     Promise.all(data.layers.map(info => {
-        //       return driver.sendCommand('LayerTree.compositingReasons',{
-        //         layerId : info.layerId
-        //       })
-        //     })).then(function(values) {
-        //       resolve(values);
-        //     });
-        //     this.artifact = {
-        //       raw: undefined,
-        //       value: undefined,
-        //       debugString: "test"
-        //     };
-        // return;
-        //   });
 
 module.exports = InvisibleImage;

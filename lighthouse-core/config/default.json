@@ -15,6 +15,13 @@
     ]
   },
   {
+    "passName": "invisibleImage",
+    "recordNetwork": true,
+    "gatherers": [
+      "invisible-image"
+    ]
+  },
+  {
     "passName": "offlinePass",
     "recordNetwork": true,
     "gatherers": [
@@ -62,7 +69,8 @@
     "tabindex",
     "content-width",
     "cache-start-url",
-    "geolocation-on-start"
+    "geolocation-on-start",
+    "invisible-image"
   ],
 
   "aggregations": [{

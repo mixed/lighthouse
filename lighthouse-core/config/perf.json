@@ -3,6 +3,13 @@
     "recordNetwork": true,
     "recordTrace": true,
     "gatherers": []
+  },
+  {
+    "passName": "invisibleImage",
+    "recordNetwork": true,
+    "gatherers": [
+      "invisible-image"
+    ]
   }],
 
   "audits": [
@@ -12,7 +19,8 @@
     "time-to-interactive",
     "user-timings",
     "screenshots",
-    "critical-request-chains"
+    "critical-request-chains",
+    "invisible-image"
   ],
 
   "aggregations": [{
@@ -55,6 +63,10 @@
         },
         "user-timings": {
           "expectedValue": 0,
+          "weight": 1
+        },
+        "invisible-image": {
+          "expectedValue": 100,
           "weight": 1
         }
       }
