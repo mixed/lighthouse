@@ -20,7 +20,8 @@ const Gatherer = require('./gatherer');
 
 // This is run in the page, not Lighthouse itself.
 /* istanbul ignore next */
-function getInVisibleImages() {
+function getInVisibleImages(param) {
+
   const invisibleImages = [... document.querySelectorAll("img")].map( img => {
     return [img.getBoundingClientRect(), img];
   }).reduce( (prev, data) => {
@@ -29,10 +30,10 @@ function getInVisibleImages() {
     if(
       img.src !== "" &&
       info.width > 70 && info.height > 70 &&
-      (info.top < 0 ||
-      document.documentElement.clientHeight < info.top ||
-      info.left < 0 ||
-      document.documentElement.clientWidth  < info.left)
+      (info.top < param.top*-1 ||
+      info.top > document.documentElement.clientHeight + param.bottom ||
+      info.left < param.left*-1 ||
+      info.left > document.documentElement.clientWidth + param.right)
     ){
       prev[img.src] = {
         "url" : img.src,
@@ -61,6 +62,21 @@ function getFileName(filename, url){
 
 }
 
+function reviseThreshold(param){
+  return JSON.stringify(["left","right","top","bottom"].reduce((prev, current) => {
+    if(typeof param[current] === "string"){
+      if(current === "left" || current === "right" ||
+         current === "top" || current === "bottom"){
+        prev[current] = param[current].replace(/(device\-)(w|h)/,(_, a, b) => {
+          return "document.documentElement.client"+b.toUpperCase();
+        });
+      }
+    }else{
+      prev[current] = param[current]||0;
+    }
+    return prev;
+  },{})).replace(/"/g,"");
+}
 
 class InvisibleImage extends Gatherer {
 
@@ -78,13 +94,12 @@ class InvisibleImage extends Gatherer {
       }
       return prev;
     },{});
-
-    return driver.evaluateAsync(`(${getInVisibleImages.toString()}())`)
+    const param = reviseThreshold(options.config.threshold);
+    return driver.evaluateAsync(`(${getInVisibleImages.toString()})(${param})`)
       .then( data => {
         const filteredData = Object.keys(data).reduce((prev, url) => {
           if(navigationRecord[url]){
             data[url].filename = getFileName(navigationRecord[url].filename,url);
-            // delete navigationRecord[url].url;
             data[url].perf = navigationRecord[url];
             data[url].perf.spendTime = data[url].perf.endTime - data[url].perf.startTime;
             prev.push(data[url]);

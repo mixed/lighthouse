@@ -9,7 +9,13 @@
     "recordNetwork": true,
     "gatherers": [
       "invisible-image"
-    ]
+    ],
+    "threshold" : {
+      "left" : "device-width",
+      "right" : "device-width",
+      "top" : "device-height/2",
+      "bottom" : "device-height/2"
+    }
   }],
 
   "audits": [
