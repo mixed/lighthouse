@@ -10,12 +10,17 @@
     "gatherers": [
       "invisible-image"
     ],
-    "threshold" : {
-      "left" : "device-width",
+    "size":{
+      "width" : 70,
+      "height" : 70
+    },
+    "range":{
+      "left" : 200,
       "right" : "device-width",
-      "top" : "device-height/2",
+      "top" : 0,
       "bottom" : "device-height/2"
     }
+
   }],
 
   "audits": [

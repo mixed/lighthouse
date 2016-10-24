@@ -20,7 +20,7 @@ const Gatherer = require('./gatherer');
 
 // This is run in the page, not Lighthouse itself.
 /* istanbul ignore next */
-function getInVisibleImages(param) {
+function getInVisibleImages(range, size) {
 
   const invisibleImages = [... document.querySelectorAll("img")].map( img => {
     return [img.getBoundingClientRect(), img];
@@ -29,11 +29,11 @@ function getInVisibleImages(param) {
     var img = data[1];
     if(
       img.src !== "" &&
-      info.width > 70 && info.height > 70 &&
-      (info.top < param.top*-1 ||
-      info.top > document.documentElement.clientHeight + param.bottom ||
-      info.left < param.left*-1 ||
-      info.left > document.documentElement.clientWidth + param.right)
+      info.width > size.width && info.height > size.height &&
+      (info.top < range.top*-1 ||
+      info.top > document.documentElement.clientHeight + range.bottom ||
+      info.left < range.left*-1 ||
+      info.left > document.documentElement.clientWidth + range.right)
     ){
       prev[img.src] = {
         "url" : img.src,
@@ -62,7 +62,7 @@ function getFileName(filename, url){
 
 }
 
-function reviseThreshold(param){
+function reviseRange(param){
   return JSON.stringify(["left","right","top","bottom"].reduce((prev, current) => {
     if(typeof param[current] === "string"){
       if(current === "left" || current === "right" ||
@@ -76,6 +76,12 @@ function reviseThreshold(param){
     }
     return prev;
   },{})).replace(/"/g,"");
+}
+
+function reviseSize(param){
+  param.width =  param.width||70;
+  param.height =  param.height||70;
+  return JSON.stringify(param);
 }
 
 class InvisibleImage extends Gatherer {
@@ -94,8 +100,9 @@ class InvisibleImage extends Gatherer {
       }
       return prev;
     },{});
-    const param = reviseThreshold(options.config.threshold);
-    return driver.evaluateAsync(`(${getInVisibleImages.toString()})(${param})`)
+    const range = reviseRange(options.config.range||{});
+    const size = reviseSize(options.config.size||{});
+    return driver.evaluateAsync(`(${getInVisibleImages.toString()})(${range},${size})`)
       .then( data => {
         const filteredData = Object.keys(data).reduce((prev, url) => {
           if(navigationRecord[url]){
