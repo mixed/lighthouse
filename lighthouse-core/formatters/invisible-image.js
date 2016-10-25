@@ -28,8 +28,7 @@ class InvisibleImage extends Formatter {
     switch (type) {
       case 'pretty':
         return function(info) {
-          if (info === null ||
-              typeof info === 'undefined') {
+          if (!Array.isArray(info)) {
             return '';
           }
 
