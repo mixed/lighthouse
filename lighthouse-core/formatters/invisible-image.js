@@ -47,7 +47,7 @@ class InvisibleImage extends Formatter {
         };
 
       case 'html':
-        throw new Error('Unsupport html format');
+        '';
 
       default:
         throw new Error('Unknown formatter type');
