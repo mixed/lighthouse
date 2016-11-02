@@ -10,7 +10,8 @@
       "../gather/gatherers/dobetterweb/datenow",
       "../gather/gatherers/dobetterweb/document-event-listeners",
       "../gather/gatherers/dobetterweb/document-write",
-      "../gather/gatherers/dobetterweb/websql"
+      "../gather/gatherers/dobetterweb/websql",
+      "../gather/gatherers/dobetterweb/link-in-head"
     ]
   }],
 
@@ -24,6 +25,7 @@
     "../audits/dobetterweb/no-websql",
     "../audits/dobetterweb/uses-http2",
     "../audits/dobetterweb/uses-passive-event-listeners",
+    "../audits/dobetterweb/block-first-paint",
     "../audits/is-on-https"
   ],
 
@@ -77,9 +79,12 @@
         }
       }
     }, {
-      "name": "Avoiding APIs that harm the user experience",
+      "name": "Avoiding Practices that harm the user experience",
       "audits": {
         "no-document-write": {
+          "expectedValue": false
+        },
+        "block-first-paint": {
           "expectedValue": false
         }
       }
