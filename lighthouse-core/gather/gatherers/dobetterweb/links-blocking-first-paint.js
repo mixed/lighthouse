@@ -21,21 +21,20 @@ const Gatherer = require('../gatherer');
 /* global document,window */
 
 /* istanbul ignore next */
-function getBlockFirstPaintLink() {
-// filtered match stylesheet/import
-// ref)
-// https://www.igvita.com/2012/06/14/debunking-responsive-css-performance-myths/
-// https://www.w3.org/TR/html-imports/#dfn-import-async-attribute
-  const linkList = [... document.querySelectorAll('head link')].filter(link => {
-    const asyncAttr = link.getAttribute('async');
+function getBlockFirstPaintLinks() {
+  // filtered match stylesheet/import
+  // ref)
+  // https://www.igvita.com/2012/06/14/debunking-responsive-css-performance-myths/
+  // https://www.w3.org/TR/html-imports/#dfn-import-async-attribute
+  const linkList = [...document.querySelectorAll('link')].filter(link => {
     return (link.rel === 'stylesheet' && window.matchMedia(link.media).matches) ||
-           (link.rel === 'import' && (asyncAttr === '' || asyncAttr));
+           (link.rel === 'import' && link.hasAttribute('async'));
   }).map(link => link.href);
 
   return Promise.resolve(linkList);
 }
 
-class LinkInHead extends Gatherer {
+class LinksBlockingFirstPaint extends Gatherer {
 
   _filteredLink(tracingData) {
     return tracingData.networkRecords.reduce((prev, record) => {
@@ -59,25 +58,25 @@ class LinkInHead extends Gatherer {
   afterPass(options, tracingData) {
     const linkInfo = this._filteredLink(tracingData);
     const driver = options.driver;
-    this.artifact = {};
-    return driver.evaluateAsync(`(${getBlockFirstPaintLink.toString()}())`)
+    return driver.evaluateAsync(`(${getBlockFirstPaintLinks.toString()}())`)
       .then(result => {
         let totalTransferSize = 0;
         let totalSpendTime = 0;
         const filteredData = result.reduce((prev, url) => {
           if (linkInfo[url]) {
-            const data = {};
-            data.url = url;
-            data.transferSize = linkInfo[url].transferSize;
+            const data = {
+              url,
+              transferSize: linkInfo[url].transferSize,
+              spendTime: this._formatMS(linkInfo[url])
+            };
             totalTransferSize += data.transferSize;
-            data.spendTime = this._formatMS(linkInfo[url]);
             totalSpendTime += data.spendTime;
             prev.push(data);
           }
           return prev;
         }, []);
         this.artifact = {
-          each: filteredData,
+          items: filteredData,
           total: {
             transferSize: totalTransferSize,
             spendTime: Math.round(totalSpendTime * 100) / 100
@@ -87,10 +86,10 @@ class LinkInHead extends Gatherer {
       .catch(_ => {
         this.artifact = {
           value: -1,
-          debugString: 'Unable to get stylesheet/webcomponents in head'
+          debugString: 'Unable to get Stylesheets/HTML Imports in head'
         };
       });
   }
 }
 
-module.exports = LinkInHead;
+module.exports = LinksBlockingFirstPaint;

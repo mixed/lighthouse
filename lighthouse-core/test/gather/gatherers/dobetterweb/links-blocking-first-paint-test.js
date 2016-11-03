@@ -17,9 +17,10 @@
 
 /* eslint-env mocha */
 
-const LinkInHeadGather = require('../../../../gather/gatherers/dobetterweb/link-in-head');
+const LinksBlockingFirstPaint =
+  require('../../../../gather/gatherers/dobetterweb/links-blocking-first-paint');
 const assert = require('assert');
-let linkInHeadGather;
+let linksBlockingFirstPaint;
 const traceData = {
   networkRecords: [
     {
@@ -49,18 +50,18 @@ const traceData = {
 describe('Link in head', () => {
   // Reset the Gatherer before each test.
   beforeEach(() => {
-    linkInHeadGather = new LinkInHeadGather();
+    linksBlockingFirstPaint = new LinksBlockingFirstPaint();
   });
 
   it('return formated Time', () => {
-    return assert.equal(linkInHeadGather._formatMS({
+    return assert.equal(linksBlockingFirstPaint._formatMS({
       startTime: 0.888,
       endTime: 0.999
     }), 0.11);
   });
 
   it('return filtered Link', () => {
-    return assert.deepEqual(linkInHeadGather._filteredLink(traceData), {
+    return assert.deepEqual(linksBlockingFirstPaint._filteredLink(traceData), {
       'http://google.com/css/style.css': {
         transferSize: 10,
         startTime: 10,
@@ -75,7 +76,7 @@ describe('Link in head', () => {
   });
 
   it('returns an artifact', () => {
-    return linkInHeadGather.afterPass({
+    return linksBlockingFirstPaint.afterPass({
       driver: {
         evaluateAsync() {
           return Promise.resolve(['http://google.com/css/style.css']);
@@ -83,7 +84,7 @@ describe('Link in head', () => {
       }
     }, traceData).then(_ => {
       const expected = {
-        each: [{
+        items: [{
           url: 'http://google.com/css/style.css',
           transferSize: 10,
           spendTime: 0}],
@@ -91,20 +92,20 @@ describe('Link in head', () => {
           transferSize: 10,
           spendTime: 0}
       };
-      assert.deepEqual(linkInHeadGather.artifact, expected);
+      assert.deepEqual(linksBlockingFirstPaint.artifact, expected);
     });
   });
 
   it('handles driver failure', () => {
-    return linkInHeadGather.afterPass({
+    return linksBlockingFirstPaint.afterPass({
       driver: {
         evaluateAsync() {
           return Promise.reject('such a fail');
         }
       }
     }, traceData).then(_ => {
-      assert.equal(linkInHeadGather.artifact.value, -1);
-      assert.ok(linkInHeadGather.artifact.debugString);
+      assert.equal(linksBlockingFirstPaint.artifact.value, -1);
+      assert.ok(linksBlockingFirstPaint.artifact.debugString);
     });
   });
 });

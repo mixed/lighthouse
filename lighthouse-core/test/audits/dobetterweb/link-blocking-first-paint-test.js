@@ -15,20 +15,21 @@
  */
 'use strict';
 
-const BlockFirstPaintAudit = require('../../../audits/dobetterweb/block-first-paint.js');
+const LinkBlockingFirstPaintAudit =
+  require('../../../audits/dobetterweb/link-blocking-first-paint.js');
 const assert = require('assert');
 
 /* eslint-env mocha */
 
 describe('Block First Paint audit', () => {
   it('fails when no input present', () => {
-    const auditResult = BlockFirstPaintAudit.audit({});
+    const auditResult = LinkBlockingFirstPaintAudit.audit({});
     assert.equal(auditResult.rawValue, false);
     assert.ok(auditResult.debugString);
   });
 
   it('fails when error input present', () => {
-    const auditResult = BlockFirstPaintAudit.audit({
+    const auditResult = LinkBlockingFirstPaintAudit.audit({
       LinkInHead: {
         value: -1
       }
@@ -38,9 +39,9 @@ describe('Block First Paint audit', () => {
   });
 
   it('fails when it found link blocking first paint', () => {
-    const auditResult = BlockFirstPaintAudit.audit({
+    const auditResult = LinkBlockingFirstPaintAudit.audit({
       LinkInHead: {
-        each: [{
+        items: [{
           url: 'http://google.com/style.css',
           transferSize: 100,
           spendTime: 100
@@ -56,9 +57,9 @@ describe('Block First Paint audit', () => {
   });
 
   it('passes when it not found link blocking first paint', () => {
-    const auditResult = BlockFirstPaintAudit.audit({
+    const auditResult = LinkBlockingFirstPaintAudit.audit({
       LinkInHead: {
-        each: [],
+        items: [],
         total: {
           transferSize: 100,
           spendTime: 100
