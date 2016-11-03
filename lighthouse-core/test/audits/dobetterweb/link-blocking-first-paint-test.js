@@ -30,7 +30,7 @@ describe('Block First Paint audit', () => {
 
   it('fails when error input present', () => {
     const auditResult = LinkBlockingFirstPaintAudit.audit({
-      LinkInHead: {
+      LinksBlockingFirstPaint: {
         value: -1
       }
     });
@@ -40,7 +40,7 @@ describe('Block First Paint audit', () => {
 
   it('fails when it found link blocking first paint', () => {
     const auditResult = LinkBlockingFirstPaintAudit.audit({
-      LinkInHead: {
+      LinksBlockingFirstPaint: {
         items: [{
           url: 'http://google.com/style.css',
           transferSize: 100,
@@ -58,7 +58,7 @@ describe('Block First Paint audit', () => {
 
   it('passes when it not found link blocking first paint', () => {
     const auditResult = LinkBlockingFirstPaintAudit.audit({
-      LinkInHead: {
+      LinksBlockingFirstPaint: {
         items: [],
         total: {
           transferSize: 100,

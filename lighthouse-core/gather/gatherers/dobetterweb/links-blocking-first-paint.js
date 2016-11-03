@@ -59,10 +59,10 @@ class LinksBlockingFirstPaint extends Gatherer {
     const linkInfo = this._filteredLink(tracingData);
     const driver = options.driver;
     return driver.evaluateAsync(`(${getBlockFirstPaintLinks.toString()}())`)
-      .then(result => {
+      .then(results => {
         let totalTransferSize = 0;
         let totalSpendTime = 0;
-        const filteredData = result.reduce((prev, url) => {
+        const filteredData = results.reduce((prev, url) => {
           if (linkInfo[url]) {
             const data = {
               url,

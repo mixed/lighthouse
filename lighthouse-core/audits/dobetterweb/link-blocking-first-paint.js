@@ -32,7 +32,7 @@ class LinkBlockingFirstPaintAudit extends Audit {
   static get meta() {
     return {
       category: 'Performance',
-      name: 'line-block-first-paint',
+      name: 'link-blocking-first-paint',
       description: 'Site does not use <link> that block first paint',
       helpText: '&lt;link elements are <a href="https://developers.google.com/web/fundamentals/performance/critical-rendering-path/analyzing-crp" target="_blank">blocking the first paint</a> of your page. Consider inline critical CSS/HTML Imports or using the <code>disabled</code> or <code>media</code> attributes to <a href="https://developers.google.com/web/fundamentals/performance/critical-rendering-path/render-blocking-css"  target="_blank">make the resource(s) non-render blocking.</a>',
       requiredArtifacts: ['LinksBlockingFirstPaint']
@@ -44,15 +44,15 @@ class LinkBlockingFirstPaintAudit extends Audit {
    * @return {!AuditResult}
    */
   static audit(artifacts) {
-    if (typeof artifacts.LinkInHead === 'undefined' ||
-        artifacts.LinkInHead.value === -1) {
+    if (typeof artifacts.LinksBlockingFirstPaint === 'undefined' ||
+        artifacts.LinksBlockingFirstPaint.value === -1) {
       return LinkBlockingFirstPaintAudit.generateAuditResult({
         rawValue: false,
         debugString: 'LinksBlockingFirstPaint gatherer did not run'
       });
     }
 
-    const results = artifacts.LinkInHead.items.map(link => {
+    const results = artifacts.LinksBlockingFirstPaint.items.map(link => {
       return {
         url: link.url,
         label: `blocked first paint by ${link.spendTime}ms`
@@ -60,14 +60,14 @@ class LinkBlockingFirstPaintAudit extends Audit {
     });
 
     let displayValue = '';
-    const totalSpendTime = artifacts.LinkInHead.total.spendTime;
+    const totalSpendTime = artifacts.LinksBlockingFirstPaint.total.spendTime;
     if (results.length > 0) {
       displayValue = `${results.length} resources blocked first paint by ${totalSpendTime}ms`;
     }
 
     return LinkBlockingFirstPaintAudit.generateAuditResult({
       displayValue,
-      rawValue: artifacts.LinkInHead.items.length === 0,
+      rawValue: artifacts.LinksBlockingFirstPaint.items.length === 0,
       extendedInfo: {
         formatter: Formatter.SUPPORTED_FORMATS.URLLIST,
         value: results

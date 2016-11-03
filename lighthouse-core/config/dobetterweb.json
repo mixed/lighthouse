@@ -17,7 +17,7 @@
 
   "audits": [
     "../audits/dobetterweb/appcache-manifest",
-    "../audits/dobetterweb/link-block-first-paint",
+    "../audits/dobetterweb/link-blocking-first-paint",
     "../audits/dobetterweb/no-console-time",
     "../audits/dobetterweb/no-datenow",
     "../audits/dobetterweb/no-document-write",
