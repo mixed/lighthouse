@@ -70,7 +70,7 @@ describe('Page uses passive events listeners where applicable', () => {
     assert.equal(auditResult.extendedInfo.value.length, 0);
   });
 
-  it('fails when listener hasn`t url', () => {
+  it('fails when listener is missing a url property', () => {
     const auditResult = PassiveEventsAudit.audit({
       PageLevelEventListeners: fixtureData,
       URL: {finalUrl: URL},

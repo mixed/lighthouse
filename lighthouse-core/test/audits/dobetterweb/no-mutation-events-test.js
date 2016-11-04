@@ -49,7 +49,7 @@ describe('Page does not use mutation events', () => {
     assert.equal(auditResult.extendedInfo.value.length, 3);
   });
 
-  it('fails when listener hasn`t url', () => {
+  it('fails when listener is missing a url property', () => {
     const auditResult = NoMutationEventsAudit.audit({
       PageLevelEventListeners: fixtureData,
       URL: {finalUrl: URL},
