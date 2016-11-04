@@ -84,7 +84,7 @@
         "no-document-write": {
           "expectedValue": false
         },
-        "link-block-first-paint": {
+        "link-blocking-first-paint": {
           "expectedValue": false
         }
       }

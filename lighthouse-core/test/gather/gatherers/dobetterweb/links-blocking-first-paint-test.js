@@ -18,7 +18,7 @@
 /* eslint-env mocha */
 
 const LinksBlockingFirstPaint =
-  require('../../../../gather/gatherers/dobetterweb/links-blocking-first-paint');
+    require('../../../../gather/gatherers/dobetterweb/links-blocking-first-paint');
 const assert = require('assert');
 let linksBlockingFirstPaint;
 const traceData = {
@@ -53,14 +53,14 @@ describe('Link in head', () => {
     linksBlockingFirstPaint = new LinksBlockingFirstPaint();
   });
 
-  it('return formated Time', () => {
+  it('return formated time', () => {
     return assert.equal(linksBlockingFirstPaint._formatMS({
       startTime: 0.888,
       endTime: 0.999
     }), 0.11);
   });
 
-  it('return filtered Link', () => {
+  it('return filtered link', () => {
     return assert.deepEqual(linksBlockingFirstPaint._filteredLink(traceData), {
       'http://google.com/css/style.css': {
         transferSize: 10,
@@ -87,10 +87,12 @@ describe('Link in head', () => {
         items: [{
           url: 'http://google.com/css/style.css',
           transferSize: 10,
-          spendTime: 0}],
+          spendTime: 0
+        }],
         total: {
           transferSize: 10,
-          spendTime: 0}
+          spendTime: 0
+        }
       };
       assert.deepEqual(linksBlockingFirstPaint.artifact, expected);
     });

@@ -16,7 +16,7 @@
 'use strict';
 
 const LinkBlockingFirstPaintAudit =
-  require('../../../audits/dobetterweb/link-blocking-first-paint.js');
+    require('../../../audits/dobetterweb/link-blocking-first-paint.js');
 const assert = require('assert');
 
 /* eslint-env mocha */
@@ -38,7 +38,7 @@ describe('Block First Paint audit', () => {
     assert.ok(auditResult.debugString);
   });
 
-  it('fails when it found link blocking first paint', () => {
+  it('fails when there are links found which block first paint', () => {
     const auditResult = LinkBlockingFirstPaintAudit.audit({
       LinksBlockingFirstPaint: {
         items: [{
@@ -56,13 +56,13 @@ describe('Block First Paint audit', () => {
     assert.ok(auditResult.extendedInfo.value.length > 0);
   });
 
-  it('passes when it not found link blocking first paint', () => {
+  it('passes when there are no links found which block first paint', () => {
     const auditResult = LinkBlockingFirstPaintAudit.audit({
       LinksBlockingFirstPaint: {
         items: [],
         total: {
-          transferSize: 100,
-          spendTime: 100
+          transferSize: 0,
+          spendTime: 0
         }
       }
     });

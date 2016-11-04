@@ -16,7 +16,7 @@
  */
 
 /**
- * @fileoverview Audit a page to see if it does not use <link> in <head>.
+ * @fileoverview Audit a page to see if it does not use <link> that block first paint.
  */
 
 'use strict';

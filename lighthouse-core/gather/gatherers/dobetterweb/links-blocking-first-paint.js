@@ -21,17 +21,26 @@ const Gatherer = require('../gatherer');
 /* global document,window */
 
 /* istanbul ignore next */
-function getBlockFirstPaintLinks() {
-  // filtered match stylesheet/import
-  // ref)
-  // https://www.igvita.com/2012/06/14/debunking-responsive-css-performance-myths/
-  // https://www.w3.org/TR/html-imports/#dfn-import-async-attribute
-  const linkList = [...document.querySelectorAll('link')].filter(link => {
-    return (link.rel === 'stylesheet' && window.matchMedia(link.media).matches) ||
-           (link.rel === 'import' && link.hasAttribute('async'));
-  }).map(link => link.href);
+function getBlockFirstPaintLinks(filterLinks) {
+  return new Promise((resolve, reject) => {
+    try {
+      const linkList = [...document.querySelectorAll('link')]
+        .filter(filterLinks)
+        .map(link => link.href);
+      resolve(linkList);
+    } catch (e) {
+      reject('Unable to get Stylesheets/HTML Imports on page');
+    }
+  });
+}
 
-  return Promise.resolve(linkList);
+// filtered match stylesheet/import
+// ref)
+// https://www.igvita.com/2012/06/14/debunking-responsive-css-performance-myths/
+// https://www.w3.org/TR/html-imports/#dfn-import-async-attribute
+function filterLinks(link) {
+  return (link.rel === 'stylesheet' && window.matchMedia(link.media).matches) ||
+         (link.rel === 'import' && link.hasAttribute('async'));
 }
 
 class LinksBlockingFirstPaint extends Gatherer {
@@ -58,7 +67,8 @@ class LinksBlockingFirstPaint extends Gatherer {
   afterPass(options, tracingData) {
     const linkInfo = this._filteredLink(tracingData);
     const driver = options.driver;
-    return driver.evaluateAsync(`(${getBlockFirstPaintLinks.toString()}())`)
+    const scriptStr = `(${getBlockFirstPaintLinks.toString()}(${filterLinks.toString()}))`;
+    return driver.evaluateAsync(scriptStr)
       .then(results => {
         let totalTransferSize = 0;
         let totalSpendTime = 0;
@@ -83,10 +93,10 @@ class LinksBlockingFirstPaint extends Gatherer {
           }
         };
       })
-      .catch(_ => {
+      .catch(debugString => {
         this.artifact = {
           value: -1,
-          debugString: 'Unable to get Stylesheets/HTML Imports in head'
+          debugString
         };
       });
   }
