@@ -36,79 +36,83 @@ function forcedChangeLayerTree() {
 
 class Layers extends Gatherer {
 
-  gathererLayer() {
+  getLayerTree() {
     return new Promise((resolve) => {
       const scriptSrc = `(${forcedChangeLayerTree.toString()}())`;
 
+      // Chrome devtool protocal not support memory estimate. So I calculate memory refer to below url.
+      // https://github.com/ChromeDevTools/devtools-frontend/blob/18c3293ee92e03f7b7c9f2a1d7ed879304e11c55/front_end/layers/LayerTreeModel.js#L434
+      const bytesPerPixel = 4;
+
       this.driver.once('LayerTree.layerTreeDidChange', (data) => {
-        resolve(data.layers);
+        let memory;
+        const backendNodeIds = [];
+        const layers = data.layers.map({layerId, parentLayerId, backendNodeId, width, height, paintCount} => {
+          memory = width * height * bytesPerPixel;
+          if(backendNodeId) {
+            backendNodeIds.push(backendNodeId);
+          }
+          return {layerId, parentLayerId, backendNodeId, memory, paintCount}
+        });
+
+        resolve({
+          layers
+          backendNodeIds
+        });
+
       });
 
       this.driver.evaluateAsync(scriptSrc).then(e => e);
     });
   }
 
-  calculateMemory(layers) {
-    // Chrome devtool protocal not support memory estimate. So I calculate memory refer to below url.
-    // https://github.com/ChromeDevTools/devtools-frontend/blob/18c3293ee92e03f7b7c9f2a1d7ed879304e11c55/front_end/layers/LayerTreeModel.js#L434
-    const bytesPerPixel = 4;
-    return layers.map( e => {
-      e.memory = e.width * e.height * bytesPerPixel;
-      return e;
+  setCompositingReasons(data) {
+    return Promise.all(data.layers.map(layer => {
+      return this.driver.sendCommand('LayerTree.compositingReasons', {
+        layerId: layer.layerId
+      });
+    })).then(reasons => {
+      reasons.forEach((reason, i) => {
+        info.layers[i] = reason;
+      });
+      return info;
     });
   }
 
-  findReason(layers) {
-    const self = this;
-    function asyncLoop(layers, index) {
-      if( layers.length > index) {
-        return self.driver.sendCommand('LayerTree.compositingReasons', {
-          layerId: layers[index].layerId
-        }).then(data => {
-          layers[index].compositingReasons = data.compositingReasons;
-          return asyncLoop(layers, index+1);
-        }, _ => {
-          layers[index].compositingReasons = [];
-          return asyncLoop(layers, index+1);
-        });
-      }else{
-        return Promise.resolve(layers);
-      }
-    }
-    return asyncLoop(layers, 0);
-  }
-
-  findNodeId(data) {
-    const backendNodeIds = data.filter(e => e.backendNodeId).map( e => e.backendNodeId);
+  setNodeIds(data) {
     return this.driver.sendCommand('DOM.pushNodesByBackendIdsToFrontend', {
-      backendNodeIds
+      backendNodeIds: data.backendNodeIds
     }).then(result => {
-      return {
-        layers: data,
-        backendNodeIds,
-        nodeIds: result.nodeIds
-      };
+      data.nodeIds = result.nodeIds;
+      return data;
     });
   }
 
-  findDOMInfo(data) {
-    const self = this;
-    const nodeInfo = {};
-    function asyncLoop(nodeIds, index, layers, backendNodeIds, nodeInfo) {
-      if( nodeIds.length > index) {
-        return self.driver.sendCommand('DOM.resolveNode', {
-          nodeId: nodeIds[index]
-        }).then(data => {
-          nodeInfo[backendNodeIds[index]] = data.object.description;
-          return asyncLoop(nodeIds, index+1, layers, backendNodeIds, nodeInfo);
-        }, _ => {
-          return asyncLoop(nodeIds, index+1, layers, backendNodeIds, nodeInfo);
-        });
-      }else{
-        return Promise.resolve({layers, nodeInfo});
-      }
-    }
-    return asyncLoop(data.nodeIds, 0, data.layers, data.backendNodeIds, nodeInfo);
+  setDOMInfo(data) {
+    const layerCount = data.layers;
+    let excuteCount = 0;
+    info.nodeInfo = {};
+
+    return new Promise((resolve, reject) => {
+      data.layers.forEach((layer, i) => {
+        this.driver.sendCommand('DOM.resolveNode', {
+          layerId: layer.layerId
+        }).then((i => {
+          return (result) => {
+            data.nodeInfo[data.backendNodeIds[i]] = result.object.description;
+            excuteCount++;
+            if(layerCount === excuteCount){
+              resolve(data);
+            }
+          }
+        })(i)).catch(_ => {
+          excuteCount++;
+          if(layerCount === excuteCount){
+            resolve(data);
+          }
+        })
+      })
+    });
   }
 
   organizeData(data) {
@@ -143,11 +147,10 @@ class Layers extends Gatherer {
   afterPass(options) {
     this.driver = options.driver;
     return this.driver.sendCommand('LayerTree.enable')
-        .then((_) => this.gathererLayer())
-        .then((data) => this.calculateMemory(data))
-        .then((data) => this.findReason(data))
-        .then((data) => this.findNodeId(data))
-        .then((data) => this.findDOMInfo(data))
+        .then((_) => this.getLayerTree())
+        .then((data) => this.setCompositingReasons(data))
+        .then((data) => this.setNodeIds(data))
+        .then((data) => this.setDOMInfo(data))
         .then((data) => this.organizeData(data));
   }
 }
