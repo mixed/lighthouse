@@ -47,17 +47,20 @@ class Layers extends Gatherer {
       this.driver.once('LayerTree.layerTreeDidChange', (data) => {
         let memory;
         const backendNodeIds = [];
-        const layers = data.layers.map({layerId, parentLayerId, backendNodeId, width, height, paintCount} => {
+        const backendNodeIdByLayerIndex = [];
+        const layers = data.layers.map(({layerId, parentLayerId, backendNodeId, width, height, paintCount}, i) => {
           memory = width * height * bytesPerPixel;
           if(backendNodeId) {
             backendNodeIds.push(backendNodeId);
+            backendNodeIdByLayerIndex.push(i);
           }
-          return {layerId, parentLayerId, backendNodeId, memory, paintCount}
+          return {layerId, parentLayerId, backendNodeId, memory, paintCount, id:`#${layerId}`, compositingReasons:[]};
         });
 
         resolve({
-          layers
-          backendNodeIds
+          layers,
+          backendNodeIds,
+          backendNodeIdByLayerIndex
         });
 
       });
@@ -72,71 +75,48 @@ class Layers extends Gatherer {
         layerId: layer.layerId
       });
     })).then(reasons => {
-      reasons.forEach((reason, i) => {
-        info.layers[i] = reason;
+      reasons.forEach(({compositingReasons}, i) => {
+        data.layers[i].compositingReasons = compositingReasons;
       });
-      return info;
+      return data;
     });
   }
 
   setNodeIds(data) {
     return this.driver.sendCommand('DOM.pushNodesByBackendIdsToFrontend', {
       backendNodeIds: data.backendNodeIds
-    }).then(result => {
-      data.nodeIds = result.nodeIds;
+    }).then(({nodeIds}) => {
+      data.nodeIds = nodeIds;
       return data;
     });
   }
 
-  setDOMInfo(data) {
-    const layerCount = data.layers;
+  setDOMInfo({layers, backendNodeIdByLayerIndex, nodeIds}) {
+    const nodeIdCount = nodeIds.length;
     let excuteCount = 0;
-    info.nodeInfo = {};
 
     return new Promise((resolve, reject) => {
-      data.layers.forEach((layer, i) => {
+      nodeIds.forEach((nodeId, i) => {
         this.driver.sendCommand('DOM.resolveNode', {
-          layerId: layer.layerId
+          nodeId: nodeId
         }).then((i => {
           return (result) => {
-            data.nodeInfo[data.backendNodeIds[i]] = result.object.description;
+            const index = backendNodeIdByLayerIndex[i];
+            layers[index].id = result.object.description;
             excuteCount++;
-            if(layerCount === excuteCount){
-              resolve(data);
+            if(nodeIdCount === excuteCount){
+              resolve(layers);
             }
           }
         })(i)).catch(_ => {
+          const index = backendNodeIdByLayerIndex[i];
           excuteCount++;
-          if(layerCount === excuteCount){
-            resolve(data);
+          if(nodeIdCount === excuteCount){
+            resolve(layers);
           }
         })
       })
     });
-  }
-
-  organizeData(data) {
-    const layerInfo = data.layers.map(e => {
-      const id = (e.backendNodeId && data.nodeInfo[e.backendNodeId])?
-                    data.nodeInfo[e.backendNodeId]:
-                    '#'+e.layerId;
-      const paintCount = e.paintCount;
-      const memory = e.memory;
-      const layerId = e.layerId;
-      const parentLayerId = e.parentLayerId;
-      const compositingReasons = e.compositingReasons;
-      return {
-        id,
-        paintCount,
-        memory,
-        layerId,
-        parentLayerId,
-        compositingReasons,
-        width: e.width,
-        height: e.height
-      };
-    });
-    return layerInfo;
   }
 
   /**
@@ -150,8 +130,7 @@ class Layers extends Gatherer {
         .then((_) => this.getLayerTree())
         .then((data) => this.setCompositingReasons(data))
         .then((data) => this.setNodeIds(data))
-        .then((data) => this.setDOMInfo(data))
-        .then((data) => this.organizeData(data));
+        .then((data) => this.setDOMInfo(data));
   }
 }
 
