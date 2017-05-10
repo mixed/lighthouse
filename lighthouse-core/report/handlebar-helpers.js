@@ -174,6 +174,8 @@ const handlebarHelpers = {
             return `${result.line}:${result.col}`;
           case 'isEval':
             return value ? 'yes' : '';
+          case 'arrow':
+              return `\`\`\`html\n <span style="left:${value.depth}px;"><span class="${value.type}"></span>${value.str}</span>\n\`\`\``;
           default:
             return String(value);
         }
@@ -416,6 +418,9 @@ const handlebarHelpers = {
     };
     // eslint-disable-next-line no-unused-vars
     renderer.code = function(code, language) {
+      if(language === "html"){
+        return code;
+      }
       return `<pre>${Handlebars.Utils.escapeExpression(code)}</pre>`;
     };
     renderer.image = function(src, title, text) {
@@ -426,6 +431,8 @@ const handlebarHelpers = {
     renderer.paragraph = function(str) {
       return str;
     };
+
+
 
     try {
       str = marked(str, {renderer, sanitize: true});

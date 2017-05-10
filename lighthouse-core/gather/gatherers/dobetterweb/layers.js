@@ -28,8 +28,8 @@ const Gatherer = require('../gatherer');
 /* istanbul ignore next */
 
 function forcedChangeLayerTree() {
-  const mockDiv = document.createElement('div');
-  document.body.appendChild(mockDiv);
+  const dummyDiv = document.createElement('div');
+  document.body.appendChild(dummyDiv);
 }
 
 /* istanbul ignore next */
@@ -54,7 +54,7 @@ class Layers extends Gatherer {
             backendNodeIds.push(backendNodeId);
             backendNodeIdByLayerIndex.push(i);
           }
-          return {layerId, parentLayerId, backendNodeId, memory, paintCount, id:`#${layerId}`, compositingReasons:[]};
+          return {layerId, parentLayerId, backendNodeId, width, height, memory, paintCount, id:`#${layerId}`, compositingReasons:[]};
         });
 
         resolve({
@@ -79,6 +79,8 @@ class Layers extends Gatherer {
         data.layers[i].compositingReasons = compositingReasons;
       });
       return data;
+    }).catch(_ => {
+      return data;
     });
   }
 
@@ -87,6 +89,8 @@ class Layers extends Gatherer {
       backendNodeIds: data.backendNodeIds
     }).then(({nodeIds}) => {
       data.nodeIds = nodeIds;
+      return data;
+    }).catch(_ => {
       return data;
     });
   }
@@ -119,18 +123,21 @@ class Layers extends Gatherer {
     });
   }
 
+  pass(options) {
+    this.driver = options.driver;
+    return this.driver.sendCommand('LayerTree.enable');
+  }
+
   /**
    * @param {!Object} options
    * @param {{networkRecords: !Array<!NetworkRecord>}} tracingData
    * @return {!Promise<!Array<{id: string, paintCount: number, layerId: number, parentLayerId: number, compositingReasons: <!Array<string>>, width: number, height: number}>>}
    */
   afterPass(options) {
-    this.driver = options.driver;
-    return this.driver.sendCommand('LayerTree.enable')
-        .then((_) => this.getLayerTree())
-        .then((data) => this.setCompositingReasons(data))
-        .then((data) => this.setNodeIds(data))
-        .then((data) => this.setDOMInfo(data));
+    return this.getLayerTree()
+      .then((data) => this.setCompositingReasons(data))
+      .then((data) => this.setNodeIds(data))
+      .then((data) => this.setDOMInfo(data));
   }
 }
 
