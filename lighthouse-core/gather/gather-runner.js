@@ -358,11 +358,11 @@ class GatherRunner {
     passes = this.instantiateGatherers(passes, options.config.configDir);
 
     const gathererResults = {};
-    const disableStorage = options.flags.disableStorageReset;
+    const saveStorage = options.flags.disableStorageReset;
 
     return driver.connect()
       .then(_ => GatherRunner.loadBlank(driver))
-      .then(_ => disableStorage && GatherRunner.warmCache(driver,options))
+      .then(_ => saveStorage && GatherRunner.warmCache(driver,options))
       .then(_ => GatherRunner.setupDriver(driver, gathererResults, options))
 
       // Run each pass
